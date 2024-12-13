@@ -36,7 +36,7 @@ const gerarToken = async (id) => {
 		token = gerarNumero();
 
 		const result = await bd.query(
-			"SELECT token FROM usarios WHERE token = $1",
+			"SELECT token FROM usuarios WHERE token = $1",
 			[token]
 		);
 
@@ -45,7 +45,7 @@ const gerarToken = async (id) => {
 		}
 	}
 
-	await bd.query("UPDATE usarios SET token = $1 WHERE id = $2", [
+	await bd.query("UPDATE usuarios SET token = $1 WHERE id = $2", [
 		token,
 		id,
 	]);
@@ -67,32 +67,41 @@ export const gerarAutenticacao = async (req, res) => {
 	if (login && senha) {
 		const client = await bd.connect();
 		try {
+			// Verifica se as credenciais de login e senha estão corretas
 			const result = await client.query(
-				"SELECT * FROM usarios WHERE login = $1 AND senha = $2",
-				[login, senha]
-			);
+                "SELECT * FROM usuarios WHERE LOWER(login) = LOWER($1) AND senha = $2",
+                [login, senha]
+            );            
 
 			if (result.rows[0]) {
-				if (result.rows[0].token) {
-					const consultarVotos =
-						await verificarVotacao(
-							client,
-							result.rows[0].id
-						);
+				const usuario = result.rows[0];
 
-					return res.status(200).json({
-						usuarioId: result.rows[0].id,
-						token: result.rows[0].token,
-						votos: consultarVotos ?? {
+				// Se o usuário tem um token, verificamos os votos
+				if (usuario.token) {
+					// Verifica se o usuário já fez votos
+					const consultarVotos = await client.query(
+						"SELECT * FROM votos WHERE usuarioId = $1",
+						[usuario.id]
+					);
+
+					// Se houver votos, retornamos os votos do usuário, caso contrário, retornamos nulos
+					const votos = consultarVotos.rows.length > 0
+						? consultarVotos.rows[0] // Se houver votos, retorna o primeiro voto encontrado
+						: {
 							filme: null,
 							diretor: null,
 							usuarioId: null,
-						},
+						};
+
+					return res.status(200).json({
+						usuarioId: usuario.id,
+						token: usuario.token,
+						votos: votos,
 					});
 				}
-				const token = await gerarToken(
-					result.rows[0].id
-				);
+
+				// Caso o usuário não tenha token, geramos um novo
+				const token = await gerarToken(usuario.id);
 
 				return res.status(200).json({
 					token,
@@ -103,6 +112,7 @@ export const gerarAutenticacao = async (req, res) => {
 					},
 				});
 			} else {
+				// Se não encontrar o usuário, retornamos erro de credenciais inválidas
 				res.status(401).json({
 					error: "Credenciais inválidas",
 				});
@@ -120,9 +130,11 @@ export const gerarAutenticacao = async (req, res) => {
 			client.release();
 		}
 	} else {
+		// Se não houver login ou senha na requisição
 		res.status(400).json({ error: "Usuário não cadastrado!" });
 	}
 };
+
 
 export const criarVotacao = async (req, res) => {
 	const { diretor, filme, usuarioId } = req.body;
@@ -147,7 +159,7 @@ export const criarVotacao = async (req, res) => {
 			);
 
 			await client.query(
-				"UPDATE usarios SET token = $1 WHERE id = $2",
+				"UPDATE usuarios SET token = $1 WHERE id = $2",
 				[token, usuarioId]
 			);
 
