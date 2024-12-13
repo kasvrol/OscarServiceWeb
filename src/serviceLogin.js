@@ -11,7 +11,6 @@ export const gerarAutenticacao = async (req, res) => {
     if (email && senha) {
         const client = await bd.connect();
         try {
-            // Verificar se o usuário existe
             const result = await client.query('SELECT * FROM usuarios WHERE email = $1 AND senha = $2', [email, senha]);
 
             if (result.rows[0]) {
@@ -33,7 +32,7 @@ export const gerarAutenticacao = async (req, res) => {
                 res.status(500).json({ error: 'Erro desconhecido ao processar sua solicitação' });
             }
         } finally {
-            client.release(); // Liberar o client após o uso
+            client.release(); 
         }
     } else {
         res.status(400).json({ error: 'Usuário não cadastrado!' });
@@ -96,7 +95,6 @@ export const criarVotacao = async (req, res) => {
 
     if (diretor && filme && token) {
         try {
-            // Inserir a votação no banco de dados
             await bd.query('INSERT INTO votos (diretor, filme, token) VALUES ($1, $2, $3)', [diretor, filme, token]);
             
             res.status(201).json({ message: 'Votação criada com sucesso!' });
