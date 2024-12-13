@@ -11,3 +11,9 @@ export const votar = (app) => {
 		await criarVotacao(req, res);
 	});
 };
+
+export const ligandoService = (app) => {
+	app.get("/", async (req, res) => {
+		res.send("API rodando na porta 3000");
+	});
+};
