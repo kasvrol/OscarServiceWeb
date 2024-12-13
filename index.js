@@ -5,7 +5,7 @@ const app = express()
 
 app.use(express.json());
 
-app.get('/', async (req, res) => {return 'hello word'})
+app.get('/', async (req, res) => {res.send('hello word')})
 fazerLogin(app)
 
 app.listen(3000, () => {
