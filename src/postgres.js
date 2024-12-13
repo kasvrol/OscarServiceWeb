@@ -2,7 +2,7 @@ import pkg from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
-const { Pool } = pkg;
+const {Pool} = pkg;
 
 const { PGHOST, PGDATABASE, PGUSER, PGPASSWORD } = process.env;
 export const bd = new Pool({
