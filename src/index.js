@@ -1,5 +1,5 @@
 import express from "express"
-import { fazerLogin } from './src/routes.js'
+import { fazerLogin } from './routes.js'
 
 const app = express()
 
