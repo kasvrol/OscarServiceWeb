@@ -58,7 +58,7 @@ const verificarVotacao = async (client, id) => {
 		"SELECT * FROM votos WHERE usuarioid = $1",
 		[id]
 	);
-	return result.rows[0];
+	return result;
 };
 
 export const gerarAutenticacao = async (req, res) => {
@@ -75,31 +75,20 @@ export const gerarAutenticacao = async (req, res) => {
 			if (result.rows[0]) {
 				const usuario = result.rows[0];
 
-				if (usuario.token) {
-					const consultarVotos =
-						await verificarVotacao(
-							client,
-							usuario.id
-						);
-
-					const votos = consultarVotos.rows.length
-						? consultarVotos.rows[0]
-						: null;
-
-					return res.status(200).json({
-						usuarioId: usuario.id,
-						token: usuario.token,
-						votos: votos,
-					});
-				}
-
+				// Sempre gere um novo token ao fazer login
 				const token = await gerarToken(usuario.id);
 
+				// Verifique se o usuário já votou
+				const consultarVotos = await verificarVotacao(client, usuario.id);
+				const votos = consultarVotos?.rows?.length ? consultarVotos.rows[0] : null;
+
 				return res.status(200).json({
+					usuarioId: usuario.id,
 					token,
-					votos: null,
+					votos,
 				});
 			} else {
+				// Credenciais inválidas
 				res.status(401).json({
 					error: "Credenciais inválidas",
 				});
@@ -117,10 +106,11 @@ export const gerarAutenticacao = async (req, res) => {
 			client.release();
 		}
 	} else {
-		// Se não houver login ou senha na requisição
+		// Caso login ou senha estejam ausentes na requisição
 		res.status(400).json({ error: "Usuário não cadastrado!" });
 	}
 };
+
 
 export const criarVotacao = async (req, res) => {
 	const { diretor, filme, usuarioId } = req.body;
@@ -132,21 +122,16 @@ export const criarVotacao = async (req, res) => {
 				client,
 				usuarioId
 			);
-			if (jaVotou) {
+
+			if (jaVotou.rows.length > 0) {
 				return res.status(409).json({
 					message: "Usuário já votou!",
 				});
 			}
 
-			const token = null;
 			await client.query(
 				"INSERT INTO votos (diretor, filme, usuarioid) VALUES ($1, $2, $3)",
 				[diretor, filme, usuarioId]
-			);
-
-			await client.query(
-				"UPDATE usuarios SET token = $1 WHERE id = $2",
-				[token, usuarioId]
 			);
 
 			res.status(201).json({
@@ -155,7 +140,7 @@ export const criarVotacao = async (req, res) => {
 		} catch (err) {
 			if (err instanceof Error) {
 				res.status(404).json({
-					message: "Usuário não cadastrado!",
+					message: "Usuário não cadastrado! + erro: " + err.message,
 				});
 			} else {
 				res.status(500).json({
