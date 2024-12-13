@@ -1,0 +1,16 @@
+{
+  "name": "OscarServiceWeb",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/kasvrol/OscarServiceWeb.git",
+  "author": "kasvrol <dovalekarolina@gmail.com>",
+  "license": "MIT",
+  "scripts":{
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "nodemon": "^3.1.7"
+  },
+  "type": "module"
+}
