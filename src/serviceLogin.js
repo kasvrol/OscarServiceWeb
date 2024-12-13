@@ -55,7 +55,7 @@ const gerarToken = async (id) => {
 
 const verificarVotacao = async (client, id) => {
 	const result = await client.query(
-		"SELECT * FROM votos WHERE usuarioId = $1",
+		"SELECT * FROM votos WHERE usuarioid = $1",
 		[id]
 	);
 	return result.rows[0];
@@ -79,19 +79,29 @@ export const gerarAutenticacao = async (req, res) => {
 							client,
 							result.rows[0].id
 						);
+
 					return res.status(200).json({
 						usuarioId: result.rows[0].id,
 						token: result.rows[0].token,
-						votos: consultarVotos,
+						votos: consultarVotos ?? {
+							filme: null,
+							diretor: null,
+							usuarioId: null,
+						},
 					});
 				}
 				const token = await gerarToken(
 					result.rows[0].id
 				);
 
-				return res
-					.status(200)
-					.json({ token, votos: null });
+				return res.status(200).json({
+					token,
+					votos: {
+						filme: null,
+						diretor: null,
+						usuarioId: null,
+					},
+				});
 			} else {
 				res.status(401).json({
 					error: "Credenciais inválidas",
@@ -132,7 +142,7 @@ export const criarVotacao = async (req, res) => {
 
 			const token = null;
 			await client.query(
-				"INSERT INTO votos (diretor, filme, usuarioId) VALUES ($1, $2, $3)",
+				"INSERT INTO votos (diretor, filme, usuarioid) VALUES ($1, $2, $3)",
 				[diretor, filme, usuarioId]
 			);
 
