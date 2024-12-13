@@ -53,11 +53,11 @@ const gerarToken = async (id) => {
 	return token;
 };
 
-const verificarVoto = async (id) => {
-	const result = await bd.query("SELECT * FROM votos WHERE id = $1", [
-		id,
-	]);
-
+const verificarVotacao = async (client, id) => {
+	const result = await client.query(
+		"SELECT * FROM votos WHERE usuarioId = $1",
+		[id]
+	);
 	return result.rows[0];
 };
 
@@ -75,7 +75,10 @@ export const gerarAutenticacao = async (req, res) => {
 			if (result.rows[0]) {
 				if (result.rows[0].token) {
 					const consultarVotos =
-						await verificarVoto();
+						await verificarVotacao(
+							client,
+							result.rows[0].id
+						);
 					return res.status(200).json({
 						usuarioId: result.rows[0].id,
 						token: result.rows[0].token,
@@ -109,14 +112,6 @@ export const gerarAutenticacao = async (req, res) => {
 	} else {
 		res.status(400).json({ error: "Usuário não cadastrado!" });
 	}
-};
-
-const verificarVotacao = async (client, id) => {
-	const result = await client.query(
-		"SELECT * FROM votos WHERE usuarioId = $1",
-		[id]
-	);
-	return result.rows[0];
 };
 
 export const criarVotacao = async (req, res) => {
