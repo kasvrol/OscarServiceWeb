@@ -83,11 +83,7 @@ export const gerarAutenticacao = async (req, res) => {
 					return res.status(200).json({
 						usuarioId: result.rows[0].id,
 						token: result.rows[0].token,
-						votos: consultarVotos ?? {
-							filme: null,
-							diretor: null,
-							usuarioId: null,
-						},
+						votos: consultarVotos ?? null,
 					});
 				}
 				const token = await gerarToken(
@@ -96,11 +92,7 @@ export const gerarAutenticacao = async (req, res) => {
 
 				return res.status(200).json({
 					token,
-					votos: {
-						filme: null,
-						diretor: null,
-						usuarioId: null,
-					},
+					votos: null,
 				});
 			} else {
 				res.status(401).json({
