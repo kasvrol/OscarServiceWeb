@@ -75,20 +75,27 @@ export const gerarAutenticacao = async (req, res) => {
 			if (result.rows[0]) {
 				const usuario = result.rows[0];
 
-				// Sempre gere um novo token ao fazer login
+				if (usuario.token) {
+                    const consultarVotos = await verificarVotacao(client, usuario.id);
+                
+                    const votos = consultarVotos.rows.length
+                        ? consultarVotos.rows[0]
+                        : null;
+                
+                    return res.status(200).json({
+                        usuarioId: usuario.id,
+                        token: usuario.token,
+                        votos: votos,
+                    });
+                }                
+
 				const token = await gerarToken(usuario.id);
 
-				// Verifique se o usuário já votou
-				const consultarVotos = await verificarVotacao(client, usuario.id);
-				const votos = consultarVotos?.rows?.length ? consultarVotos.rows[0] : null;
-
 				return res.status(200).json({
-					usuarioId: usuario.id,
 					token,
-					votos,
+					votos: null,
 				});
 			} else {
-				// Credenciais inválidas
 				res.status(401).json({
 					error: "Credenciais inválidas",
 				});
@@ -106,11 +113,10 @@ export const gerarAutenticacao = async (req, res) => {
 			client.release();
 		}
 	} else {
-		// Caso login ou senha estejam ausentes na requisição
+		// Se não houver login ou senha na requisição
 		res.status(400).json({ error: "Usuário não cadastrado!" });
 	}
 };
-
 
 export const criarVotacao = async (req, res) => {
 	const { diretor, filme, usuarioId } = req.body;
